@@ -1,0 +1,40 @@
+# Virtual environments
+venv/
+.venv/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# System files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Package manager files
+Pipfile.lock
+poetry.lock
+*.conda
+
+# Log files and temporary files
+*.log
+*.bak
+*.swp
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Sensitive files (Optional)
+.env
+.env.local
+config.json
