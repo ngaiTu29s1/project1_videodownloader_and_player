@@ -4,8 +4,8 @@ import qbittorrentapi
 import os
 
 # Paths to qBittorrent
-QB_INSTALLER_PATH = r"C:\Users\ADMIN\Documents\Code\python\qbittorrent\qBittorrent.exe"
-QB_PORTABLE_PATH = r"C:\Users\ADMIN\Documents\Code\python\qbittorrent\qBittorrentPortable\App\qBittorrent\qBittorrent.exe"
+QB_INSTALLER_PATH = r"C:\Users\ADMIN\Documents\Code\Project1\qbittorrent\qBittorrent.exe"
+QB_PORTABLE_PATH = r"C:\Users\ADMIN\Documents\Code\Project1\qbittorrent\qBittorrentPortable\App\qBittorrent\qBittorrent.exe"
 
 # Default download location
 DEFAULT_DOWNLOAD_LOCATION = r"C:\Users\ADMIN\Downloads"
