@@ -1,19 +1,12 @@
-import sys
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
+from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtCore import QFile
+from views.py.loginScreen import LoginWindow
 
-class SimpleWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("My Simple Window")
-        self.resize(400, 300)
-        
-        layout = QVBoxLayout()
-        button = QPushButton("Click Me")
-        layout.addWidget(button)
-        self.setLayout(layout)
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = SimpleWindow()
+    app = QApplication()
+    window = LoginWindow()
     window.show()
-    sys.exit(app.exec())
+    app.exec()
+
