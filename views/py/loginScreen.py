@@ -14,19 +14,21 @@ from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
 from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+    QPalette, QPixmap, QRadialGradient, QTransform,
+    QPixmap, QPalette, QBrush)
 from PySide6.QtWidgets import (QApplication, QGridLayout, QLabel, QLineEdit,
     QMainWindow, QMenuBar, QPushButton, QSizePolicy,
     QStatusBar, QWidget)
 
-# Constants defined
-from core.constants import loginWindowHeight, loginWindowWidth
+from core.constants import (WINDOW_HEIGHT, WINDOW_WIDTH, INPUT_WIDTH,
+    LOGIN_BUTTON_HEIGHT, LOGIN_BUTTON_WIDTH, GUEST_BUTTON_HEIGHT, GUEST_BUTTON_WIDTH,
+    FONT_SIZE_LABEL, FONT_FAMILY, LAYOUT_HORIZONTAL_SPACING)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(loginWindowWidth, loginWindowHeight)
+        MainWindow.resize(350, 250)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -96,3 +98,37 @@ class LoginWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # Manual configuration
+        self.resize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.setMinimumSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+        self.setWindowTitle("Login - TorrentStream")
+
+        # Set background image using QPixmap
+        background_pixmap = QPixmap("resources/login.jpg")
+        scaled_pixmap = background_pixmap.scaled(self.size(), Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+
+        palette = self.palette()
+        palette.setBrush(self.backgroundRole(), QBrush(scaled_pixmap))
+        self.setPalette(palette)
+
+        # Label styling
+        self.ui.gridLayout.setHorizontalSpacing(LAYOUT_HORIZONTAL_SPACING)
+        label_font = QFont(FONT_FAMILY, FONT_SIZE_LABEL)
+        self.ui.usenameLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.ui.passwordLabel.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.ui.usenameLabel.setFont(label_font)
+        self.ui.passwordLabel.setFont(label_font)
+
+        # Input handling
+        self.ui.usernameLE.setFixedWidth(INPUT_WIDTH)
+        self.ui.passwordLE.setFixedWidth(INPUT_WIDTH)
+        self.ui.usernameLE.returnPressed.connect(self.ui.passwordLE.setFocus)
+        self.ui.passwordLE.returnPressed.connect(self.ui.loginButton.click)
+
+
+        # Button sizing
+        self.ui.loginButton.setFixedSize(LOGIN_BUTTON_WIDTH, LOGIN_BUTTON_HEIGHT)
+        self.ui.guestButton.setFixedSize(GUEST_BUTTON_WIDTH, GUEST_BUTTON_HEIGHT)
+        self.ui.gridLayout.setAlignment(self.ui.loginButton, Qt.AlignHCenter)
+        self.ui.gridLayout.setAlignment(self.ui.guestButton, Qt.AlignHCenter)
