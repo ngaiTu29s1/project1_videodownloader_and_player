@@ -4,8 +4,14 @@ import subprocess
 UI_DIR = "views/ui"
 PY_DIR = "views/py"
 
+""""
+Converted ui files:
+    loginScreen
+
+"""
+
 # Files you want to convert (just base names, no extension)
-selected_files = ["loginScreen"]
+selected_files = ["mainDashboard"]
 
 os.makedirs(PY_DIR, exist_ok=True)
 
