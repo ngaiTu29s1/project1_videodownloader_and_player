@@ -1,8 +1,9 @@
 import sys
 from PySide6.QtWidgets import QApplication
-from views.py.loginScreen import LoginWindow
+from views.py.loginView import LoginWindow
 from models.loginModel import LoginModel
 from controllers.loginController import LoginController
+
 
 def main():
     app = QApplication(sys.argv)
