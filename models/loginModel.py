@@ -1,9 +1,8 @@
 class LoginModel:
     def __init__(self):
-        # Hardcoded user credentials (for demonstration purposes)
+        # Test data
         self.valid_users = {
-            "admin": "password123",
-            "guest": "guest123"
+            "admin": "password123"
         }
 
     def authenticate(self, username, password):

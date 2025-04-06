@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QMessageBox
+from controllers.dashboardController import DashboardController
 
 class LoginController:
     def __init__(self, model, view):
@@ -23,7 +24,11 @@ class LoginController:
         # Authenticate using the model
         if self.model.authenticate(username, password):
             self.show_message("Success", f"Welcome, {username}!")
-            # TODO: Transition to the main application window
+            # Transition to the main application window (Dashboard)
+            self.dashboard_controller = DashboardController()
+            self.dashboard_controller.show_dashboard()
+            # Close the login window
+            self.view.close()
         else:
             self.show_message("Error", "Invalid username or password.")
             self.view.ui.usernameLE.clear()
@@ -34,7 +39,12 @@ class LoginController:
         Handle the guest login button click event.
         """
         self.show_message("Guest Login", "Welcome, Guest!")
-        # TODO: Transition to the main application window
+        # Transition to the main application window (Dashboard)
+        from controllers.dashboardController import DashboardController
+        self.dashboard_controller = DashboardController()
+        self.dashboard_controller.show_dashboard()
+        # Close the login window
+        self.view.close()
 
     def show_message(self, title, message):
         """
