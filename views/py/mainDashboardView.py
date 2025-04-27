@@ -1,7 +1,9 @@
-from PySide6.QtCore import QCoreApplication, QMetaObject, Signal
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QCoreApplication, QMetaObject, Signal, Qt
+
 from PySide6.QtWidgets import (QGridLayout, QLineEdit, QMainWindow, QMenuBar, QPushButton,
-                               QStatusBar, QTabWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSizePolicy, QListWidget, QWidget, QVBoxLayout, QPushButton, QListWidget)
+                               QStatusBar, QTabWidget, QWidget, QVBoxLayout
+                               , QHBoxLayout, QSizePolicy, QListWidget, QWidget
+                               , QSlider, QVBoxLayout, QPushButton, QListWidget)
 
 from core.constants import WINDOW_HEIGHT, WINDOW_WIDTH
 
@@ -112,10 +114,21 @@ class DashboardWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        # Ensure the central widget uses a layout
+        layout = QVBoxLayout(self.ui.centralwidget)
+        self.ui.centralwidget.setLayout(layout)
+        layout.addWidget(self.ui.tabWidget)
+
 class PlayerView(QWidget):
     # Define signals for controller to connect to
     browse_clicked = Signal()
     video_selected = Signal(int)
+
+    # Controller functions
+    fullscreen_clicked = Signal()
+    skip_forward_clicked = Signal()
+    skip_backward_clicked = Signal()
+    volume_changed = Signal(int)
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -123,6 +136,11 @@ class PlayerView(QWidget):
         
     def setup_ui(self):
         self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
+
+        self.videoWidget = QWidget(self)
+        self.layout.addWidget(self.videoWidget, stretch=1)  # This makes videoWidget expand
 
         # Video widget where videos will be rendered
         self.videoWidget = QWidget(self)
@@ -138,6 +156,25 @@ class PlayerView(QWidget):
         self.videoList = QListWidget()
         self.videoList.itemDoubleClicked.connect(self.on_video_selected)
         self.layout.addWidget(self.videoList)
+        
+        self.fullscreenBtn = QPushButton("Full Screen")
+        self.skipFwdBtn = QPushButton(">> 10s")
+        self.skipBackBtn = QPushButton("<< 10s")
+        self.volumeSlider = QSlider(Qt.Horizontal)
+        self.volumeSlider.setRange(0, 100)
+        self.volumeSlider.setValue(50)
+
+        controls = QHBoxLayout()
+        controls.addWidget(self.fullscreenBtn)
+        controls.addWidget(self.skipBackBtn)
+        controls.addWidget(self.skipFwdBtn)
+        controls.addWidget(self.volumeSlider)
+        self.layout.addLayout(controls)  # <-- Corrected line
+
+        self.fullscreenBtn.clicked.connect(self.fullscreen_clicked)
+        self.skipFwdBtn.clicked.connect(self.skip_forward_clicked)
+        self.skipBackBtn.clicked.connect(self.skip_backward_clicked)
+        self.volumeSlider.valueChanged.connect(self.volume_changed)
 
     def on_browse_clicked(self):
         """Emit signal when browse button is clicked"""
@@ -153,3 +190,28 @@ class PlayerView(QWidget):
         self.videoList.clear()
         for video_name, _ in videos:
             self.videoList.addItem(video_name)
+
+    def keyPressEvent(self, event):
+        """Keyboard shortcuts for player controls."""
+        if event.key() == Qt.Key_F:
+            self.fullscreen_clicked.emit()
+        elif event.key() == Qt.Key_Right:
+            self.skip_forward_clicked.emit()
+        elif event.key() == Qt.Key_Left:
+            self.skip_backward_clicked.emit()
+        else:
+            super().keyPressEvent(event)
+
+    def wheelEvent(self, event):
+        """Mouse wheel to control volume."""
+        delta = event.angleDelta().y() // 120  # 1 for each notch
+        new_volume = self.volumeSlider.value() + delta * 5
+        new_volume = max(0, min(100, new_volume))
+        self.volumeSlider.setValue(new_volume)
+        self.volume_changed.emit(new_volume)
+        super().wheelEvent(event)
+
+    def focusInEvent(self, event):
+        """Ensure the widget receives key events when focused."""
+        self.setFocus(Qt.ActiveWindowFocusReason)
+        super().focusInEvent(event)

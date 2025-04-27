@@ -180,38 +180,52 @@ class DashboardController(QObject):
 
 class PlayerController:
     def __init__(self, view):
-        """
-        Initialize the player controller with a PlayerView instance
-        """
-        self.view = view  # This should be the PlayerView widget
+        self.view = view  # PlayerView instance
         self.model = PlayerModel()
-        
-        # Initialize VLC
         self.instance = vlc.Instance()
         self.player = self.instance.media_player_new()
-        
+
         # Connect signals from view to handler methods
         self.view.browse_clicked.connect(self.handle_browse)
         self.view.video_selected.connect(self.handle_video_selected)
-    
+        self.view.fullscreen_clicked.connect(self.toggle_fullscreen)
+        self.view.skip_forward_clicked.connect(self.skip_forward)
+        self.view.skip_backward_clicked.connect(self.skip_backward)
+        self.view.volume_changed.connect(self.set_volume)
+
     def handle_browse(self):
-        """Handle browse button click"""
-        folder_path = QFileDialog.getExistingDirectory(self.view, "Select Folder")
+        default_folder = "D:/Phim"  # Set your default folder here
+        folder_path = QFileDialog.getExistingDirectory(self.view, "Select Folder", default_folder)
         if folder_path:
             videos = self.model.load_videos_from_folder(folder_path)
             self.view.update_video_list(videos)
-    
+
     def handle_video_selected(self, index):
-        """Handle video selection from the list"""
         video_path = self.model.get_video_path(index)
         if video_path:
             media = self.instance.media_new(video_path)
             self.player.set_media(media)
-            
             # Set the video output window id
             if sys.platform.startswith('win'):
                 self.player.set_hwnd(self.view.videoWidget.winId())
             else:
                 self.player.set_xwindow(self.view.videoWidget.winId())
-                
             self.player.play()
+
+    def toggle_fullscreen(self):
+        main_window = self.view.window()
+        if main_window.isFullScreen():
+            main_window.showNormal()
+        else:
+            main_window.showFullScreen()
+
+    def skip_forward(self):
+        current_time = self.player.get_time()
+        self.player.set_time(current_time + 10000)  # 10 seconds
+
+    def skip_backward(self):
+        current_time = self.player.get_time()
+        self.player.set_time(max(0, current_time - 10000))  # 10 seconds
+
+    def set_volume(self, volume):
+        self.player.audio_set_volume(volume)
