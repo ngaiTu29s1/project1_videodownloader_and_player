@@ -40,7 +40,6 @@ class LoginController:
         """
         self.show_message("Guest Login", "Welcome, Guest!")
         # Transition to the main application window (Dashboard)
-        from controllers.dashboardController import DashboardController
         self.dashboard_controller = DashboardController()
         self.dashboard_controller.show_dashboard()
         # Close the login window

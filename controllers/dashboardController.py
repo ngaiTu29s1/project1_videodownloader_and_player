@@ -1,11 +1,14 @@
-from PySide6.QtWidgets import QMessageBox, QLabel, QVBoxLayout, QProgressDialog
+from PySide6.QtWidgets import QMessageBox, QLabel, QVBoxLayout, QProgressDialog, QFileDialog
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
-from models.dashboardModel import DashboardModel
-from views.py.mainDashboardView import DashboardWindow
+from models.dashboardModel import DashboardModel, PlayerModel
+from views.py.mainDashboardView import DashboardWindow, PlayerView
 from qbit import start_qbittorrent, add_torrent_by_hash, stop_qbittorrent, DEFAULT_DOWNLOAD_LOCATION
 import qbittorrentapi
 import requests
+import vlc
+import sys
+
 
 class DashboardController(QObject):
     def __init__(self):
@@ -16,6 +19,10 @@ class DashboardController(QObject):
         self.qb_process = None  # Process for qBittorrent
         self.timer = None       # QTimer for updating torrent status
         self.status_dialog = None
+        
+        # Initialize the player controller with the playerWidget from our view
+        self.player_controller = PlayerController(self.ui.playerWidget)
+        
         self.initialize()
         # Install event filter to lower the popup when main window is activated
         self.view.installEventFilter(self)
@@ -170,3 +177,41 @@ class DashboardController(QObject):
         """
         if self.qb_process:
             stop_qbittorrent(self.qb_process)
+
+class PlayerController:
+    def __init__(self, view):
+        """
+        Initialize the player controller with a PlayerView instance
+        """
+        self.view = view  # This should be the PlayerView widget
+        self.model = PlayerModel()
+        
+        # Initialize VLC
+        self.instance = vlc.Instance()
+        self.player = self.instance.media_player_new()
+        
+        # Connect signals from view to handler methods
+        self.view.browse_clicked.connect(self.handle_browse)
+        self.view.video_selected.connect(self.handle_video_selected)
+    
+    def handle_browse(self):
+        """Handle browse button click"""
+        folder_path = QFileDialog.getExistingDirectory(self.view, "Select Folder")
+        if folder_path:
+            videos = self.model.load_videos_from_folder(folder_path)
+            self.view.update_video_list(videos)
+    
+    def handle_video_selected(self, index):
+        """Handle video selection from the list"""
+        video_path = self.model.get_video_path(index)
+        if video_path:
+            media = self.instance.media_new(video_path)
+            self.player.set_media(media)
+            
+            # Set the video output window id
+            if sys.platform.startswith('win'):
+                self.player.set_hwnd(self.view.videoWidget.winId())
+            else:
+                self.player.set_xwindow(self.view.videoWidget.winId())
+                
+            self.player.play()

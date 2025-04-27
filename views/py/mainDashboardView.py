@@ -1,7 +1,7 @@
-from PySide6.QtCore import QCoreApplication, QMetaObject, Qt
+from PySide6.QtCore import QCoreApplication, QMetaObject, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QGridLayout, QLineEdit, QMainWindow, QMenuBar, QPushButton,
-                               QStatusBar, QTabWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSizePolicy)
+                               QStatusBar, QTabWidget, QWidget, QVBoxLayout, QLabel, QHBoxLayout, QSizePolicy, QListWidget, QWidget, QVBoxLayout, QPushButton, QListWidget)
 
 from core.constants import WINDOW_HEIGHT, WINDOW_WIDTH
 
@@ -81,9 +81,14 @@ class Ui_MainWindow(object):
         # Add the DashboardTab to the tab widget
         self.tabWidget.addTab(self.DashboardTab, "Dashboard")
         
-        # (Optional) Create a second (empty) tab
+        # ----- Player Tab -----
         self.PlayerTab = QWidget()
         self.PlayerTab.setObjectName("PlayerTab")
+        # Create a vertical layout for PlayerTab and embed PlayerView (not PlayerWidget)
+        self.playerLayout = QVBoxLayout(self.PlayerTab)
+        self.playerWidget = PlayerView(self.PlayerTab)  # Changed from PlayerWidget to PlayerView
+        self.playerLayout.addWidget(self.playerWidget)
+        self.PlayerTab.setLayout(self.playerLayout)
         self.tabWidget.addTab(self.PlayerTab, "Player")
         
         # Set central widget and menu/status bars
@@ -106,3 +111,45 @@ class DashboardWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+class PlayerView(QWidget):
+    # Define signals for controller to connect to
+    browse_clicked = Signal()
+    video_selected = Signal(int)
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setup_ui()
+        
+    def setup_ui(self):
+        self.layout = QVBoxLayout(self)
+
+        # Video widget where videos will be rendered
+        self.videoWidget = QWidget(self)
+        self.videoWidget.setMinimumHeight(300)
+        self.layout.addWidget(self.videoWidget)
+
+        # Browse button
+        self.openButton = QPushButton("Browse Folder")
+        self.openButton.clicked.connect(self.on_browse_clicked)
+        self.layout.addWidget(self.openButton)
+
+        # Video list
+        self.videoList = QListWidget()
+        self.videoList.itemDoubleClicked.connect(self.on_video_selected)
+        self.layout.addWidget(self.videoList)
+
+    def on_browse_clicked(self):
+        """Emit signal when browse button is clicked"""
+        self.browse_clicked.emit()
+        
+    def on_video_selected(self, item):
+        """Emit signal with selected video index when a video is double-clicked"""
+        index = self.videoList.row(item)
+        self.video_selected.emit(index)
+        
+    def update_video_list(self, videos):
+        """Update the list widget with video names"""
+        self.videoList.clear()
+        for video_name, _ in videos:
+            self.videoList.addItem(video_name)
