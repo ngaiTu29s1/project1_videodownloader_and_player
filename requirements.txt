@@ -6,3 +6,4 @@ python-vlc==3.0.21203
 qbittorrent-api==2025.2.0
 requests==2.32.3
 urllib3==2.3.0
+PySide6==6.5.2
