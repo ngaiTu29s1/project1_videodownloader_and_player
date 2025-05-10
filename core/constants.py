@@ -18,3 +18,9 @@ GUEST_BUTTON_HEIGHT = 40
 
 # Layout spacing
 LAYOUT_HORIZONTAL_SPACING = 20
+
+
+# API Constants
+OMDB_API_KEY = "124d5c6f"  # Replace with your actual API key
+OMDB_API_URL = "http://www.omdbapi.com/"
+OMDB_SEARCH_TERM = "movie"  # Default search term for movies
