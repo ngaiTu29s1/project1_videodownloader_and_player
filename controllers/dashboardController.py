@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMessageBox, QLabel, QVBoxLayout, QProgressDialog, QFileDialog
+from PySide6.QtWidgets import QMessageBox, QLabel, QVBoxLayout, QProgressDialog, QFileDialog, QWidget
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 from models.dashboardModel import DashboardModel, PlayerModel
@@ -8,6 +8,8 @@ import qbittorrentapi
 import requests
 import vlc
 import sys
+from player import VLCPlayer
+import threading
 
 
 class DashboardController(QObject):
@@ -184,6 +186,9 @@ class PlayerController:
         self.model = PlayerModel()
         self.instance = vlc.Instance()
         self.player = self.instance.media_player_new()
+        self.is_fullscreen = False
+        self.original_parent = self.view.videoWidget.parentWidget()
+        self.original_geometry = self.view.videoWidget.geometry()
 
         # Connect signals from view to handler methods
         self.view.browse_clicked.connect(self.handle_browse)
@@ -203,21 +208,34 @@ class PlayerController:
     def handle_video_selected(self, index):
         video_path = self.model.get_video_path(index)
         if video_path:
-            media = self.instance.media_new(video_path)
-            self.player.set_media(media)
-            # Set the video output window id
-            if sys.platform.startswith('win'):
-                self.player.set_hwnd(self.view.videoWidget.winId())
-            else:
-                self.player.set_xwindow(self.view.videoWidget.winId())
-            self.player.play()
+            # Mở player ở thread mới để không block giao diện Qt
+            threading.Thread(target=VLCPlayer, args=(video_path,), daemon=True).start()
 
     def toggle_fullscreen(self):
-        main_window = self.view.window()
-        if main_window.isFullScreen():
-            main_window.showNormal()
+        if not self.is_fullscreen:
+            # Remove videoWidget from its parent and show as a top-level fullscreen window
+            self.view.videoWidget.setParent(None)
+            self.view.videoWidget.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
+            self.view.videoWidget.showFullScreen()
+            self.is_fullscreen = True
+
+            # Set VLC output to the now top-level videoWidget
+            if sys.platform.startswith('win'):
+                self.player.set_hwnd(int(self.view.videoWidget.winId()))
+            else:
+                self.player.set_xwindow(int(self.view.videoWidget.winId()))
         else:
-            main_window.showFullScreen()
+            # Hide fullscreen, restore to original parent and geometry
+            self.view.videoWidget.setWindowFlags(Qt.Widget)
+            self.view.videoWidget.showNormal()
+            self.view.layout.insertWidget(0, self.view.videoWidget)  # or the correct index
+            self.is_fullscreen = False
+
+            # Set VLC output back to the videoWidget (should be automatic, but you can repeat the set_hwnd/set_xwindow if needed)
+            if sys.platform.startswith('win'):
+                self.player.set_hwnd(int(self.view.videoWidget.winId()))
+            else:
+                self.player.set_xwindow(int(self.view.videoWidget.winId()))
 
     def skip_forward(self):
         current_time = self.player.get_time()
