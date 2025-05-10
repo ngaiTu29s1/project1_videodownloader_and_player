@@ -1,5 +1,6 @@
 import requests
-import os, vlc
+import os
+from core.constants import OMDB_API_KEY, OMDB_API_URL, OMDB_SEARCH_TERM
 
 class DashboardModel:
     def __init__(self):
@@ -10,8 +11,8 @@ class DashboardModel:
         Load movies from the OMDb API using the provided API key.
         This example uses a fixed search term "movie" and returns the first three results.
         """
-        api_key = "124d5c6f"  # Replace with your actual OMDb API key
-        url = f"http://www.omdbapi.com/?s=movie&apikey={api_key}"
+        api_key =  OMDB_API_KEY
+        url = f"{OMDB_API_URL}?s={OMDB_SEARCH_TERM}&apikey={api_key}"
         try:
             res = requests.get(url)
             res.raise_for_status()
