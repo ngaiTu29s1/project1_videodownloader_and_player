@@ -169,7 +169,7 @@ class PlayerView(QWidget):
         controls.addWidget(self.skipBackBtn)
         controls.addWidget(self.skipFwdBtn)
         controls.addWidget(self.volumeSlider)
-        self.layout.addLayout(controls)  # <-- Corrected line
+        self.layout.addLayout(controls)
 
         self.fullscreenBtn.clicked.connect(self.fullscreen_clicked)
         self.skipFwdBtn.clicked.connect(self.skip_forward_clicked)
