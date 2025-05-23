@@ -3,7 +3,8 @@ from PySide6.QtCore import QCoreApplication, QMetaObject, Signal, Qt
 from PySide6.QtWidgets import (QGridLayout, QLineEdit, QMainWindow, QMenuBar, QPushButton,
                                QStatusBar, QTabWidget, QWidget, QVBoxLayout
                                , QHBoxLayout, QSizePolicy, QListWidget, QWidget
-                               , QSlider, QVBoxLayout, QPushButton, QListWidget)
+                               , QSlider, QVBoxLayout, QPushButton, QListWidget,
+                               QLabel)
 
 from core.constants import WINDOW_HEIGHT, WINDOW_WIDTH
 
@@ -80,6 +81,19 @@ class Ui_MainWindow(object):
         
         self.dashboardLayout.addWidget(self.gridContainer)
         
+         # --- Add pagination buttons here ---
+        self.paginationLayout = QHBoxLayout()
+        self.prevButton = QPushButton("Previous")
+        self.nextButton = QPushButton("Next")
+        self.paginationLayout.addWidget(self.prevButton)
+        self.paginationLayout.addWidget(self.nextButton)
+        self.dashboardLayout.addLayout(self.paginationLayout)
+        # --- End pagination buttons ---
+        # After creating prevButton and nextButton
+        self.pageLabel = QLabel("Page 1/1")
+        self.pageLabel.setAlignment(Qt.AlignCenter)
+        self.paginationLayout.insertWidget(1, self.pageLabel)  # Insert between prev and next
+
         # Add the DashboardTab to the tab widget
         self.tabWidget.addTab(self.DashboardTab, "Dashboard")
         
@@ -118,6 +132,7 @@ class DashboardWindow(QMainWindow):
         layout = QVBoxLayout(self.ui.centralwidget)
         self.ui.centralwidget.setLayout(layout)
         layout.addWidget(self.ui.tabWidget)
+        
 
 class PlayerView(QWidget):
     # Define signals for controller to connect to
