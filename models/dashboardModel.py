@@ -1,6 +1,18 @@
-import requests
 import os
-from core.constants import OMDB_API_KEY, OMDB_API_URL, OMDB_SEARCH_TERM
+import sqlite3
+
+DB_FOLDER = os.path.join("core", "db")
+MOVIE_DB_FILE = os.path.join(DB_FOLDER, "movie.db")
+
+def get_movies_page(page=0, page_size=3):
+    conn = sqlite3.connect(MOVIE_DB_FILE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM movies ORDER BY id LIMIT ? OFFSET ?", (page_size, page * page_size))
+    columns = [col[0] for col in cursor.description]
+    rows = cursor.fetchall()
+    conn.close()
+    # Convert to list of dicts
+    return [dict(zip(columns, row)) for row in rows]
 
 class DashboardModel:
     def __init__(self):
@@ -8,29 +20,10 @@ class DashboardModel:
 
     def load_data(self):
         """
-        Load movies from the OMDb API using the provided API key.
-        This example uses a fixed search term "movie" and returns the first three results.
+        Optionally, you can use this to load a welcome message or other static info.
         """
-        api_key =  OMDB_API_KEY
-        url = f"{OMDB_API_URL}?s={OMDB_SEARCH_TERM}&apikey={api_key}"
-        try:
-            res = requests.get(url)
-            res.raise_for_status()
-            data = res.json()
-            movies_data = data.get("Search", [])[:3]
-            updated_movies = []
-            for movie in movies_data:
-                title = movie.get("Title", "Unknown Title")
-                poster = movie.get("Poster", "N/A")
-                updated_movies.append({"Title": title, "Poster": poster})
-                # In DashboardModel.load_data()
-                print("Fetched movies:", updated_movies)
-            self.data = {"movies": updated_movies, "welcomeMessage": "Search here"}
-        except Exception as e:
-            print(f"Error fetching movies from OMDb API: {e}")
-            self.data = {"movies": [], "welcomeMessage": "Error loading movies"}
+        self.data = {"welcomeMessage": "Search here"}
         return self.data
-    
 
 class PlayerModel:
     def __init__(self):
