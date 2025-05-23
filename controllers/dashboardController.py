@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMessageBox, QLabel, QVBoxLayout, QProgressDialog, QFileDialog, QWidget
+from PySide6.QtWidgets import QMessageBox, QLabel, QVBoxLayout, QProgressDialog, QFileDialog, QWidget, QPushButton, QDialog, QVBoxLayout, QLabel, QTextEdit
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
 from models.dashboardModel import DashboardModel, PlayerModel
@@ -10,6 +10,7 @@ import vlc
 import sys
 from player import VLCPlayer
 import threading
+from views.py.movieDetails import MovieDetailsDialog
 
 
 class DashboardController(QObject):
@@ -44,9 +45,7 @@ class DashboardController(QObject):
             self.ui.movieCardWidget_2,
             self.ui.movieCardWidget_3,
         ]
-        print("Displaying movies:", movies)
         for widget in widgets:
-            # Clear the layout if any
             layout = widget.layout()
             if layout is not None:
                 while layout.count():
@@ -73,6 +72,14 @@ class DashboardController(QObject):
                     layout.addWidget(poster_label)
                 except Exception as e:
                     print(f"Error fetching poster for {movie.get('Title')}: {e}")
+            # Add "View More" button
+            view_more_btn = QPushButton("View More")
+            view_more_btn.clicked.connect(lambda checked, m=movie: self.show_movie_details(m))
+            layout.addWidget(view_more_btn)
+
+    def show_movie_details(self, movie):
+        dialog = MovieDetailsDialog(movie, self.view)
+        dialog.exec()
 
     def handle_download(self):
         """
