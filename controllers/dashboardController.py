@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QMessageBox, QLabel, QVBoxLayout, QProgressDialog, QFileDialog, QWidget, QPushButton, QDialog, QVBoxLayout, QLabel, QTextEdit
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import Qt, QTimer, QEvent, QObject
-from models.dashboardModel import DashboardModel, PlayerModel
-from views.py.mainDashboardView import DashboardWindow, PlayerView
+from models.dashboardModel import DashboardModel, PlayerModel, get_movies_page, MOVIE_DB_FILE
+from views.py.mainDashboardView import DashboardWindow
 from qbit import start_qbittorrent, add_torrent_by_hash, stop_qbittorrent, DEFAULT_DOWNLOAD_LOCATION
 import qbittorrentapi
 import requests
@@ -11,33 +11,55 @@ import sys
 from player import VLCPlayer
 import threading
 from views.py.movieDetails import MovieDetailsDialog
+import sqlite3
 
 
 class DashboardController(QObject):
     def __init__(self):
-        super().__init__()  # Required for QObject
+        super().__init__()
         self.model = DashboardModel()
         self.view = DashboardWindow()
         self.ui = self.view.ui
-        self.qb_process = None  # Process for qBittorrent
-        self.timer = None       # QTimer for updating torrent status
+        self.qb_process = None
+        self.timer = None
         self.status_dialog = None
-        
-        # Initialize the player controller with the playerWidget from our view
+
         self.player_controller = PlayerController(self.ui.playerWidget)
-        
+
+        # --- Pagination state ---
+        self.current_page = 0
+        self.page_size = 3
+
+        # Connect pagination buttons
+        self.ui.prevButton.clicked.connect(self.prev_page)
+        self.ui.nextButton.clicked.connect(self.next_page)
+
         self.initialize()
-        # Install event filter to lower the popup when main window is activated
         self.view.installEventFilter(self)
 
     def initialize(self):
-        # Load initial data from the model
+        # Load initial data from the model (for welcome message, etc.)
         data = self.model.load_data()
         self.ui.searchbarLE.setPlaceholderText(data.get("welcomeMessage", ""))
-        # Connect the download button to the download logic
         self.ui.downloadButton.clicked.connect(self.handle_download)
-        # Display initial movies from the model (if any)
-        self.display_movies(data.get("movies", []))
+        self.ui.downloadButton.clicked.connect(self.handle_download)
+        # Show first page of movies from DB
+        self.load_page()
+
+    def load_page(self):
+        movies = get_movies_page(self.current_page, self.page_size)
+        self.display_movies(movies)
+
+    def next_page(self):
+        # Only go to next page if there are more movies
+        if get_movies_page(self.current_page + 1, self.page_size):
+            self.current_page += 1
+            self.load_page()
+
+    def prev_page(self):
+        if self.current_page > 0:
+            self.current_page -= 1
+            self.load_page()
 
     def display_movies(self, movies):
         widgets = [
@@ -56,11 +78,13 @@ class DashboardController(QObject):
                 widget.setLayout(QVBoxLayout())
         for movie, widget in zip(movies, widgets):
             layout = widget.layout()
-            # Add movie title
-            title_label = QLabel(movie.get("Title", "Unknown Title"))
+            # Movie title (bold, centered)
+            title_label = QLabel(movie.get("title", "Unknown Title"))
+            title_label.setAlignment(Qt.AlignCenter)
+            title_label.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #FFD700;")
             layout.addWidget(title_label)
-            # Add poster if available
-            poster_url = movie.get("Poster")
+            # Poster
+            poster_url = movie.get("poster")
             if poster_url and poster_url != "N/A":
                 try:
                     response = requests.get(poster_url)
@@ -68,18 +92,38 @@ class DashboardController(QObject):
                     pixmap = QPixmap()
                     pixmap.loadFromData(response.content)
                     poster_label = QLabel()
-                    poster_label.setPixmap(pixmap.scaled(120, 180, Qt.KeepAspectRatio))
+                    poster_label.setPixmap(pixmap.scaled(120, 180, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                    poster_label.setAlignment(Qt.AlignCenter)
                     layout.addWidget(poster_label)
                 except Exception as e:
-                    print(f"Error fetching poster for {movie.get('Title')}: {e}")
-            # Add "View More" button
+                    print(f"Error fetching poster for {movie.get('title')}: {e}")
+            # "View More" button
             view_more_btn = QPushButton("View More")
+            view_more_btn.setStyleSheet("background-color: #444; color: white; border-radius: 8px; padding: 6px;")
             view_more_btn.clicked.connect(lambda checked, m=movie: self.show_movie_details(m))
-            layout.addWidget(view_more_btn)
-
+            layout.addWidget(view_more_btn, alignment=Qt.AlignCenter)
+            
+    
     def show_movie_details(self, movie):
         dialog = MovieDetailsDialog(movie, self.view)
         dialog.exec()
+    
+    def update_page_label(self):
+        conn = sqlite3.connect(MOVIE_DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM movies")
+        total_movies = cursor.fetchone()[0]
+        conn.close()
+        total_pages = max(1, (total_movies + self.page_size - 1) // self.page_size)
+        self.ui.pageLabel.setText(f"Page {self.current_page + 1}/{total_pages}")
+        self.ui.prevButton.setEnabled(self.current_page > 0)
+        self.ui.nextButton.setEnabled(self.current_page < total_pages - 1)
+
+    def load_page(self):
+        movies = get_movies_page(self.current_page, self.page_size)
+        self.display_movies(movies)
+        self.update_page_label()
+    
 
     def handle_download(self):
         """
