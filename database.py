@@ -1,8 +1,6 @@
 import sqlite3
-import hashlib
 import os
 import requests
-import random
 import time
 from core.constants import OMDB_API_KEY, OMDB_API_URL
 
@@ -224,11 +222,11 @@ if __name__ == "__main__":
     create_account_table()
     create_movie_table()
     # Example data
-    insert_account("alice", "password123", "alice@example.com")
-    insert_account("bob", "securepass", "bob@example.com")
-    print(list_accounts())
+    # insert_account("alice", "password123", "alice@example.com")
+    # insert_account("bob", "securepass", "bob@example.com")
+    # print(list_accounts())
     # Fetch and store 20 movies (no duplicates)
-    fetch_and_store_20_movies()
-    print_all_movies()
+    # fetch_and_store_20_movies()
+    # print_all_movies()
     # print_all_accounts()
 

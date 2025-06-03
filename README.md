@@ -62,6 +62,16 @@ This application allows you to:
    - [Download VLC](https://www.videolan.org/vlc/) and install it.
    - [Download qBittorrent](https://www.qbittorrent.org/download.php) or use the included portable version.
 
+5. **Set up qBittorrent Web UI:**
+   To enable the Web UI in qBittorrent:
+   1. Open qBittorrent.
+   2. Go to **Tools > Options > Web UI**.
+   3. Check the box for **Web User Interface (Remote Control)**.
+   4. Set a username and password (default: `admin` / `adminadmin`).
+   5. Ensure the Web UI is running on port `8080` (default).
+
+   If qBittorrent stops unexpectedly, ensure it is not blocked by your firewall or antivirus software.
+
 ## Running the Application
 
 1. **Start the app:**
@@ -84,4 +94,4 @@ This application allows you to:
 
 ## License
 
-This project is for educational purposes. 
+This project is for educational purposes.

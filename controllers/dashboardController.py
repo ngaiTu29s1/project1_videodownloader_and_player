@@ -41,9 +41,14 @@ class DashboardController(QObject):
         # Load initial data from the model (for welcome message, etc.)
         data = self.model.load_data()
         self.ui.searchbarLE.setPlaceholderText(data.get("welcomeMessage", ""))
+        
+        # Connect the search button to the search_movies method
+        self.ui.searchButton.clicked.connect(self.search_movies)
+        
+        # Connect the download button
         self.ui.downloadButton.clicked.connect(self.handle_download)
-        self.ui.downloadButton.clicked.connect(self.handle_download)
-        # Show first page of movies from DB
+        
+        # Show the first page of movies from the database
         self.load_page()
 
     def load_page(self):
@@ -62,11 +67,17 @@ class DashboardController(QObject):
             self.load_page()
 
     def display_movies(self, movies):
+        """
+        Display a list of movies in the 3 slots on the dashboard.
+        """
+        # Widgets for the 3 slots
         widgets = [
             self.ui.movieCardWidget_1,
             self.ui.movieCardWidget_2,
             self.ui.movieCardWidget_3,
         ]
+        
+        # Clear existing content in the movie card widgets
         for widget in widgets:
             layout = widget.layout()
             if layout is not None:
@@ -76,13 +87,17 @@ class DashboardController(QObject):
                         item.widget().deleteLater()
             else:
                 widget.setLayout(QVBoxLayout())
+        
+        # Populate the widgets with movie data
         for movie, widget in zip(movies, widgets):
             layout = widget.layout()
+            
             # Movie title (bold, centered)
             title_label = QLabel(movie.get("title", "Unknown Title"))
             title_label.setAlignment(Qt.AlignCenter)
             title_label.setStyleSheet("font-weight: bold; font-size: 14px; margin-bottom: 8px; color: #FFD700;")
             layout.addWidget(title_label)
+            
             # Poster
             poster_url = movie.get("poster")
             if poster_url and poster_url != "N/A":
@@ -97,6 +112,7 @@ class DashboardController(QObject):
                     layout.addWidget(poster_label)
                 except Exception as e:
                     print(f"Error fetching poster for {movie.get('title')}: {e}")
+            
             # "View More" button
             view_more_btn = QPushButton("View More")
             view_more_btn.setStyleSheet("background-color: #444; color: white; border-radius: 8px; padding: 6px;")
@@ -105,6 +121,9 @@ class DashboardController(QObject):
             
     
     def show_movie_details(self, movie):
+        """
+        Show detailed information about the selected movie.
+        """
         dialog = MovieDetailsDialog(movie, self.view)
         dialog.exec()
     
@@ -123,7 +142,49 @@ class DashboardController(QObject):
         movies = get_movies_page(self.current_page, self.page_size)
         self.display_movies(movies)
         self.update_page_label()
-    
+
+    def search_movies(self):
+        """
+        Search for movies in the database that contain the search string.
+        Display the results in the 3 slots on the dashboard.
+        """
+        search_text = self.ui.searchbarLE.text().strip()
+        if not search_text:
+            QMessageBox.warning(self.view, "Error", "Please enter a search term.")
+            return
+
+        # Query the database for movies containing the search string
+        conn = sqlite3.connect(MOVIE_DB_FILE)
+        cursor = conn.cursor()
+        query = """
+            SELECT title, poster, year, genre, director, actors, plot, imdb_rating
+            FROM movies
+            WHERE title LIKE ?
+            LIMIT 3
+        """
+        cursor.execute(query, (f"%{search_text}%",))
+        movies = cursor.fetchall()
+        conn.close()
+
+        # Convert the result into a list of dictionaries
+        movie_list = [
+            {
+                "title": row[0],
+                "poster": row[1],
+                "year": row[2],
+                "genre": row[3],
+                "director": row[4],
+                "actors": row[5],
+                "plot": row[6],
+                "imdb_rating": row[7],
+            }
+            for row in movies
+        ]
+
+        # Display the search results in the 3 slots
+        self.display_movies(movie_list)
+        self.ui.pageLabel.setText(f"Search Results for '{search_text}'")
+        
 
     def handle_download(self):
         """

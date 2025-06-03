@@ -8,7 +8,7 @@ QB_INSTALLER_PATH = r"C:\Users\ADMIN\Documents\Code\Project1\qbittorrent\qBittor
 QB_PORTABLE_PATH = r"C:\Users\ADMIN\Documents\Code\Project1\qbittorrent\qBittorrentPortable\App\qBittorrent\qBittorrent.exe"
 
 # Default download location
-DEFAULT_DOWNLOAD_LOCATION = r"C:\Users\ADMIN\Downloads"
+DEFAULT_DOWNLOAD_LOCATION = r"D:\Phim"
 
 # Function to start qBittorrent in headless mode
 def start_qbittorrent():
