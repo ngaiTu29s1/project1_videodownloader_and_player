@@ -299,16 +299,10 @@ class PlayerController:
         self.instance = vlc.Instance()
         self.player = self.instance.media_player_new()
         self.is_fullscreen = False
-        self.original_parent = self.view.videoWidget.parentWidget()
-        self.original_geometry = self.view.videoWidget.geometry()
 
         # Connect signals from view to handler methods
         self.view.browse_clicked.connect(self.handle_browse)
         self.view.video_selected.connect(self.handle_video_selected)
-        self.view.fullscreen_clicked.connect(self.toggle_fullscreen)
-        self.view.skip_forward_clicked.connect(self.skip_forward)
-        self.view.skip_backward_clicked.connect(self.skip_backward)
-        self.view.volume_changed.connect(self.set_volume)
 
     def handle_browse(self):
         default_folder = "D:/Phim"  # Set your default folder here
@@ -322,40 +316,3 @@ class PlayerController:
         if video_path:
             # Mở player ở thread mới để không block giao diện Qt
             threading.Thread(target=VLCPlayer, args=(video_path,), daemon=True).start()
-
-    def toggle_fullscreen(self):
-        if not self.is_fullscreen:
-            # Remove videoWidget from its parent and show as a top-level fullscreen window
-            self.view.videoWidget.setParent(None)
-            self.view.videoWidget.setWindowFlags(Qt.Window | Qt.FramelessWindowHint)
-            self.view.videoWidget.showFullScreen()
-            self.is_fullscreen = True
-
-            # Set VLC output to the now top-level videoWidget
-            if sys.platform.startswith('win'):
-                self.player.set_hwnd(int(self.view.videoWidget.winId()))
-            else:
-                self.player.set_xwindow(int(self.view.videoWidget.winId()))
-        else:
-            # Hide fullscreen, restore to original parent and geometry
-            self.view.videoWidget.setWindowFlags(Qt.Widget)
-            self.view.videoWidget.showNormal()
-            self.view.layout.insertWidget(0, self.view.videoWidget)  # or the correct index
-            self.is_fullscreen = False
-
-            # Set VLC output back to the videoWidget (should be automatic, but you can repeat the set_hwnd/set_xwindow if needed)
-            if sys.platform.startswith('win'):
-                self.player.set_hwnd(int(self.view.videoWidget.winId()))
-            else:
-                self.player.set_xwindow(int(self.view.videoWidget.winId()))
-
-    def skip_forward(self):
-        current_time = self.player.get_time()
-        self.player.set_time(current_time + 10000)  # 10 seconds
-
-    def skip_backward(self):
-        current_time = self.player.get_time()
-        self.player.set_time(max(0, current_time - 10000))  # 10 seconds
-
-    def set_volume(self, volume):
-        self.player.audio_set_volume(volume)

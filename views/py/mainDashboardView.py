@@ -138,12 +138,6 @@ class PlayerView(QWidget):
     # Define signals for controller to connect to
     browse_clicked = Signal()
     video_selected = Signal(int)
-
-    # Controller functions
-    fullscreen_clicked = Signal()
-    skip_forward_clicked = Signal()
-    skip_backward_clicked = Signal()
-    volume_changed = Signal(int)
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -172,24 +166,6 @@ class PlayerView(QWidget):
         self.videoList.itemDoubleClicked.connect(self.on_video_selected)
         self.layout.addWidget(self.videoList)
         
-        self.fullscreenBtn = QPushButton("Full Screen")
-        self.skipFwdBtn = QPushButton(">> 10s")
-        self.skipBackBtn = QPushButton("<< 10s")
-        self.volumeSlider = QSlider(Qt.Horizontal)
-        self.volumeSlider.setRange(0, 100)
-        self.volumeSlider.setValue(50)
-
-        controls = QHBoxLayout()
-        controls.addWidget(self.fullscreenBtn)
-        controls.addWidget(self.skipBackBtn)
-        controls.addWidget(self.skipFwdBtn)
-        controls.addWidget(self.volumeSlider)
-        self.layout.addLayout(controls)
-
-        self.fullscreenBtn.clicked.connect(self.fullscreen_clicked)
-        self.skipFwdBtn.clicked.connect(self.skip_forward_clicked)
-        self.skipBackBtn.clicked.connect(self.skip_backward_clicked)
-        self.volumeSlider.valueChanged.connect(self.volume_changed)
 
     def on_browse_clicked(self):
         """Emit signal when browse button is clicked"""
