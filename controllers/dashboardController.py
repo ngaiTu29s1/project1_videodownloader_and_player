@@ -23,6 +23,8 @@ class DashboardController(QObject):
         self.qb_process = None
         self.timer = None
         self.status_dialog = None
+        self.search_mode = False
+        self.search_text = ""
 
         self.player_controller = PlayerController(self.ui.playerWidget)
 
@@ -51,20 +53,26 @@ class DashboardController(QObject):
         # Show the first page of movies from the database
         self.load_page()
 
-    def load_page(self):
-        movies = get_movies_page(self.current_page, self.page_size)
-        self.display_movies(movies)
-
     def next_page(self):
-        # Only go to next page if there are more movies
-        if get_movies_page(self.current_page + 1, self.page_size):
-            self.current_page += 1
+        self.current_page += 1
+        if self.search_mode:
+            self.search_movies()
+        else:
             self.load_page()
 
     def prev_page(self):
         if self.current_page > 0:
             self.current_page -= 1
-            self.load_page()
+            if self.search_mode:
+                self.search_movies()
+            else:
+                self.load_page()
+
+    def load_page(self):
+        self.search_mode = False
+        movies = get_movies_page(self.current_page, self.page_size)
+        self.display_movies(movies)
+        self.update_page_label()
 
     def display_movies(self, movies):
         """
@@ -138,6 +146,18 @@ class DashboardController(QObject):
         self.ui.prevButton.setEnabled(self.current_page > 0)
         self.ui.nextButton.setEnabled(self.current_page < total_pages - 1)
 
+    def update_search_page_label(self, search_text):
+        # Đếm tổng số phim khớp search
+        conn = sqlite3.connect(MOVIE_DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM movies WHERE title LIKE ?", (f"%{search_text}%",))
+        total_movies = cursor.fetchone()[0]
+        conn.close()
+        total_pages = max(1, (total_movies + self.page_size - 1) // self.page_size)
+        self.ui.pageLabel.setText(f"Search '{search_text}': Page {self.current_page + 1}/{total_pages}")
+        self.ui.prevButton.setEnabled(self.current_page > 0)
+        self.ui.nextButton.setEnabled(self.current_page < total_pages - 1)
+
     def load_page(self):
         movies = get_movies_page(self.current_page, self.page_size)
         self.display_movies(movies)
@@ -150,7 +170,10 @@ class DashboardController(QObject):
         """
         search_text = self.ui.searchbarLE.text().strip()
         if not search_text:
-            QMessageBox.warning(self.view, "Error", "Please enter a search term.")
+            # Nếu rỗng, hiển thị tất cả phim với phân trang như mặc định
+            self.current_page = 0
+            self.load_page()
+            self.search_mode = False
             return
 
         # Query the database for movies containing the search string
@@ -160,9 +183,9 @@ class DashboardController(QObject):
             SELECT title, poster, year, genre, director, actors, plot, imdb_rating
             FROM movies
             WHERE title LIKE ?
-            LIMIT 3
+            LIMIT ? OFFSET ?
         """
-        cursor.execute(query, (f"%{search_text}%",))
+        cursor.execute(query, (f"%{search_text}%", self.page_size, self.current_page * self.page_size))
         movies = cursor.fetchall()
         conn.close()
 
@@ -180,6 +203,12 @@ class DashboardController(QObject):
             }
             for row in movies
         ]
+
+        # Lưu trạng thái search
+        self.search_mode = True
+        self.search_text = search_text
+        self.display_movies(movie_list)
+        self.update_search_page_label(search_text)
 
         # Display the search results in the 3 slots
         self.display_movies(movie_list)
