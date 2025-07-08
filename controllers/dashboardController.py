@@ -270,7 +270,7 @@ class DashboardController(QObject):
                     f"State: {torrent.state}\n"
                     f"Download Speed: {torrent.dlspeed / 1024:.2f} KB/s\n"
                     f"Upload Speed: {torrent.upspeed / 1024:.2f} KB/s\n"
-                    f"ETA: {torrent.eta if hasattr(torrent, 'eta') else 'N/A'}"
+                    f"ETA: {(torrent.eta//60) if hasattr(torrent, 'eta') and torrent.eta > 0 else 'N/A'} m"
                 )
                 self.status_dialog.setValue(progress_value)
                 self.status_dialog.setLabelText(details)
